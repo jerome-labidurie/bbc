@@ -1,16 +1,16 @@
 
 /** wifiConfig
- *  
+ *
  *  "library" to handle wifi connection/configuration via web server
  *  at the start of a esp8266.
- *  
+ *
  *  basic usage :
  *  @code
  *  uint8_t r = 0;
  *  IPAddress myIp;
  *  EEPROM.begin(512);
  *  Serial.begin (115200);
- *  
+ *
  *  do {
  *    r = wicoWifiConfig (0, "ESPconfig", &myIp);
  *    Serial.println(myIp);
@@ -21,14 +21,14 @@
  *  } while (!r);
  *  @endcode
  *  What this code is doing :
- *  
+ *
  *  Read wifi SSID/password from eeprom (at given address)
  *  Tries to connect to this wifi network
  *  If connection fail,
  *    start in Access Point mode
  *    start a webserver with scanned network and input for password
  *    when credential are entered, store them and connects to the said wifi network
- *  
+ *
  *  @note if you want to reset the credentials stored in eeprom, you can use wicoResetWifiConfig()
  *  @code
  *  // html code embeded : <form>Reset wifi <input type='checkbox' name='reset'><input type='submit' value='send'></form>
@@ -37,14 +37,14 @@
  *    wicoResetWifiConfig (0);
  *  }
  *  @endcode
- *  
+ *
  *  @todo: better webserver management (ie: global wicoServer(80)) ??
  *  @todo create a lib ?
  */
 
 #include <EEPROM.h>
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h> 
+#include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 ESP8266WebServer wicoServer(80);
 #define NB_TRY 10 /**< duration of wifi connection trial before aborting (seconds) */
@@ -57,44 +57,47 @@ uint8_t wicoNetwSsidLen = 0; /**< number of really stored scan networks */
 uint8_t wicoIsConfigSet = 0; /**< is wifi configuration has been set through webserver ? */
 
 /** read wifi config stored in eeprom.
- *  
- *  There must be at least 35+64 bytes after given configAddr.
+ *
+ *  There must be at least 35+64+100 bytes after given configAddr.
  *  eeprom must have been initialised : EEPROM.begin(size);
- *  
+ *
  *  @param[in] configAddr eeprom address for begining of configuration
  *  @param[out] ssid read ssid : 32 Bytes
  *  @param[out] pwd read wifi password : 64 Bytes
+ * @param[out] email read email to notify : 100 Bytes
  *  @return 1 if success, 0 if failure
  */
-int wicoReadWifiConfig (int configAddr, char* ssid, char* pwd) {
+int wicoReadWifiConfig (int configAddr, char* ssid, char* pwd, char* email) {
   int i = 0;
-  
-  for (i = 0; i < 32; i++)
-    {
+
+  for (i = 0; i < 32; i++) {
       ssid[i] = char(EEPROM.read(i+configAddr));
-    }
-  for (i=0; i < 64; i++)
-    {
+  }
+  for (i=0; i < 64; i++) {
       pwd[i] = char(EEPROM.read(i+configAddr+32));
-    }
-    return 1;
+  }
+  for (i=0; i < 100; i++) {
+      email[i] = char(EEPROM.read(i+configAddr+32+64));
+  }
+  return 1;
 }
 
 
 /** write wifi config to eeprom.
- *  
- *  There must be at least 35+64 bytes after given configAddr.
+ *
+ *  There must be at least 32+64+100 bytes after given configAddr.
  *  eeprom must have been initialised : EEPROM.begin(size);
  *  commit() is done here
- *  
+ *
  *  @param[in] configAddr eeprom address for begining of configuration
  *  @param[in] ssid read ssid : 32 Bytes
  *  @param[in] pwd read wifi password : 64 Bytes
+ *  @param[in] email read email : 100 Bytes
  *  @return 1 if success, 0 if failure
  */
-int wicoWriteWifiConfig (int configAddr, const char ssid[32], const char pwd[64]) {
+int wicoWriteWifiConfig (int configAddr, const char ssid[32], const char pwd[64], const char email[100]) {
   int i = 0;
-  
+
   for (i = 0; i < 32; i++)
     {
       EEPROM.write(i+configAddr,ssid[i]);
@@ -103,22 +106,25 @@ int wicoWriteWifiConfig (int configAddr, const char ssid[32], const char pwd[64]
     {
       EEPROM.write(i+configAddr+32,pwd[i]);
     }
+  for (i=0; i < 100; i++)
+    {
+      EEPROM.write(i+configAddr+32+64,email[i]);
+    }
     EEPROM.commit();
     return 1;
 }
 
 /** reset wifi config in eeprom
- *  
+ *
  *  write \0 all over the place.
- *  
+ *
  *  @param[in] configAddr eeprom address for begining of configuration
  *  @return 1 if success, 0 if failure
  */
 int wicoResetWifiConfig (int configAddr) {
-  char d[64];
-  memset (d, 0, 64);
-  return wicoWriteWifiConfig (configAddr, d, d);
-  
+  char d[100];
+  memset (d, 0, 100);
+  return wicoWriteWifiConfig (configAddr, d, d, d);
 }
 
 /** handle / URI for AP webserver
@@ -135,7 +141,9 @@ void wicoHandleRoot (void) {
     Serial.println(wicoServer.arg("ssid").c_str());
     Serial.print("save:");
     Serial.println(wicoServer.arg("pwd").c_str());
-    wicoWriteWifiConfig (wicoConfigAddr, wicoServer.arg("ssid").c_str(), wicoServer.arg("pwd").c_str());
+    Serial.print("save:");
+    Serial.println(wicoServer.arg("email").c_str()); //TODO: et si la longueur fait pas 100 ??
+    wicoWriteWifiConfig (wicoConfigAddr, wicoServer.arg("ssid").c_str(), wicoServer.arg("pwd").c_str(), wicoServer.arg("email").c_str());
     wicoIsConfigSet = 1;
   }
 
@@ -144,7 +152,7 @@ void wicoHandleRoot (void) {
   if ( wicoNetwSsidLen != 0) {
     // some netw were found
     s += "<select name='ssid'>";
-     for (int i=0; i<wicoNetwSsidLen; i++) {        
+     for (int i=0; i<wicoNetwSsidLen; i++) {
       Serial.print(i);
       Serial.println(wicoNetwSsid[i]);
         s += "<option>";
@@ -155,8 +163,10 @@ void wicoHandleRoot (void) {
   } else {
     s += "<input type=text name=ssid>";
   }
-  s += "<br>Password: <input type='text' name='pwd'><br/><input type=checkbox name=reset>Reset<br/><input type='submit' value='send'></form></p></body></html>\n";
-  
+  s += "<br>Password: <input type='text' name='pwd'><br/>";
+  s += "<br>Email to notify: <input type='text' name='email'><br/>";
+  s += "<input type=checkbox name=reset>Reset<br/><input type='submit' value='send'></form></p></body></html>\n";
+
   wicoServer.send ( 200, "text/html", s );
 }
 
@@ -180,7 +190,7 @@ void wicoSetupWebServer (void) {
  */
 IPAddress wicoSetupAP(char* ssid) {
   int i;
-  
+
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(500);
@@ -235,11 +245,12 @@ IPAddress wicoSetupWifi(char* ssid, char* pwd) {
 int wicoWifiConfig (int configAddr, char* apSsid, IPAddress* myIp) {
   char ssid[32];
   char pwd[64];
+  char email[100];
 
   wicoConfigAddr = configAddr;
 
   // read config
-  wicoReadWifiConfig (configAddr, ssid, pwd);
+  wicoReadWifiConfig (configAddr, ssid, pwd, email);
   Serial.print(ssid);
   Serial.print("/");
   Serial.print(pwd);

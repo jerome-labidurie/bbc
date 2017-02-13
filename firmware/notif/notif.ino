@@ -85,7 +85,19 @@ void loop(void) {
 
 
 void handleRoot(void) {
+	char ssid[32];
+	char pwd[64];
+	char email[100];
+
+	// get current config
+	memset (ssid,  0,  32);
+	memset (pwd,   0,  64);
+	memset (email, 0, 100);
+	wicoReadWifiConfig (0, ssid, pwd, email);
+
 	String s = "<html><body><h1>BBC</h1>";
+	s += "<br/>SSID: ";  s += ssid;
+	s += "<br/>email: "; s += email;
 	s += "<p><form>Reset config <input type='checkbox' name='reset'><input type='submit' value='send'></form></p>\n";
 	s += "</body></html>";
 	if (server.hasArg("reset") ) {
