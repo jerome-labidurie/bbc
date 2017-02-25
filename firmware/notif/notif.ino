@@ -27,23 +27,24 @@
 #define HOSTNAME "BBCnotif"
 #define baseSSID "BBC-"
 #define VERSION "BBC Notif v1.0"
-char mySSID[13];
+#define MYSSID_LEN 13
+char mySSID[MYSSID_LEN];
 
 ESP8266WebServer server(80);
 
 void setup (void) {
 	uint8_t r = 0;
 	IPAddress myIP;
-	char mySSID[13];
+        char mySSID[MYSSID_LEN];
 	uint8_t mac[6];
 
 	EEPROM.begin(512);
 	Serial.begin (115200);
 	Serial.println (VERSION);
 
-	// create uniq ssid
+	// create ~uniq ssid
 	WiFi.macAddress(mac);
-	snprintf (mySSID, 13, "%s%02X%02X", baseSSID, mac[4], mac[5]);
+        snprintf (mySSID, MYSSID_LEN, "%s%02X%02X", baseSSID, mac[4], mac[5]);
 
 	// setup wifi
 	do {
