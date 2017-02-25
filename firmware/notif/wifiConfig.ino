@@ -1,3 +1,21 @@
+/**
+ *  This file is part of BBC Notif.
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  Copyright 2017 Jérôme Labidurie jerome@labidurie.fr
+ */
 
 /** wifiConfig
  *
@@ -61,11 +79,13 @@ uint8_t wicoIsConfigSet = 0; /**< is wifi configuration has been set through web
  *  There must be at least 35+64+100 bytes after given configAddr.
  *  eeprom must have been initialised : EEPROM.begin(size);
  *
- *  @param[in] configAddr eeprom address for begining of configuration
- *  @param[out] ssid read ssid : 32 Bytes
- *  @param[out] pwd read wifi password : 64 Bytes
+ * @param[in] configAddr eeprom address for begining of configuration
+ * @param[out] ssid read ssid : 32 Bytes
+ * @param[out] pwd read wifi password : 64 Bytes
  * @param[out] email read email to notify : 100 Bytes
- *  @return 1 if success, 0 if failure
+ * @return 1 if success, 0 if failure
+ * @BUG: fin de chaines
+ *
  */
 int wicoReadWifiConfig (int configAddr, char* ssid, char* pwd, char* email) {
   int i = 0;

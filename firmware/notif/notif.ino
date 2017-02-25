@@ -22,11 +22,11 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <EEPROM.h>
+#include "Gsender.h"
 
-
-#define HOSTNAME "BBCnotif"
+#define HOSTNAME "BrainBox"
 #define baseSSID "BBC-"
-#define VERSION "BBC Notif v1.0"
+#define VERSION "BrainBox v1.0"
 char mySSID[13];
 
 ESP8266WebServer server(80);
@@ -77,6 +77,7 @@ void setup (void) {
 	Serial.println("mDNS responder started");
 	// Add service to MDNS-SD
 	MDNS.addService("http", "tcp", 80);
+
 } // setup()
 
 void loop(void) {
@@ -108,9 +109,25 @@ void handleRoot(void) {
 	server.send ( 200, "text/html", s );
 } // handleRoot()
 
-void handleNotFound() {
+void handleNotFound(void) {
   String message = "Not Found\n\n";
   message += "URI: ";
   message += server.uri();
   server.send ( 404, "text/plain", message );
 }
+
+/** send notification email
+ * @param[in] to destination email
+ * @return 0 if ok
+ */
+uint8_t sendEmail (char* to) {
+	Gsender *gsender = Gsender::Instance();    // Getting pointer to class instance
+	String subject = "Brain Box notification";
+	if(gsender->Subject(subject)->Send(to, "Vous avez du courrier.\nVotre dévouée Brain Box.")) {
+		Serial.println("Message send.");
+	} else {
+		Serial.print("Error sending message: ");
+		Serial.println(gsender->getError());
+	}
+} // sendEmail
+
