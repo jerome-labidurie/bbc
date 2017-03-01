@@ -63,9 +63,13 @@
 #include <EEPROM.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
+#include <DNSServer.h>
 #include <ESP8266WebServer.h>
 ESP8266WebServer wicoServer(80);
+DNSServer dnsServer;
+
 #define NB_TRY 10 /**< duration of wifi connection trial before aborting (seconds) */
+#define DNS_PORT 53 /**< DNS port */
 
 int  wicoConfigAddr = 0; /**< address in eeprom to store wifi config */
 
@@ -190,15 +194,22 @@ void wicoHandleRoot (void) {
   wicoServer.send ( 200, "text/html", s );
 }
 
-/** start web server and wait for wifi configuration.
+/** start web server, DNSServer for CaptivePortal and wait for wifi configuration.
+ * @param myIP current AP ip
  *  @return only when wifi configuration has been set
  */
-void wicoSetupWebServer (void) {
+void wicoSetupWebServer (IPAddress myIP) {
   wicoIsConfigSet = 0;
   wicoServer.on("/", wicoHandleRoot);
   wicoServer.begin();
   Serial.println("HTTP server started");
+
+  // if DNSServer is started with "*" for domain name, it will reply with
+  // provided IP to all DNS request
+  dnsServer.start(DNS_PORT, "*", myIP);
+
   while (!wicoIsConfigSet) {
+    dnsServer.processNextRequest();
     wicoServer.handleClient();
   }
   wicoServer.stop();

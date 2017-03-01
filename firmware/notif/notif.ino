@@ -44,7 +44,6 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 #include <EEPROM.h>
 #include "Gsender.h"
 
@@ -64,6 +63,7 @@ extern struct rst_info resetInfo;
 char mySSID[MYSSID_LEN];
 
 ESP8266WebServer server(80);
+
 unsigned long sleepTime = 0;
 
 void setup (void) {
@@ -83,6 +83,7 @@ void setup (void) {
 		ESP.rtcUserMemoryRead (0, &emailState, 4);
 		Serial.printf ("emailState:%d\n", emailState);
 		if (isMail() ) {
+			blink (2, 300);
 			if (emailState == 0) {
 				// wake up from deep-sleep, there's mail and email not yet send
 				setupWifi();
@@ -97,6 +98,7 @@ void setup (void) {
 				// store email send state in RTC memory
 				emailState = 1;
 				ESP.rtcUserMemoryWrite (0, &emailState, 4);
+				blink (3, 300);
 			}
 		} else {
 				// store email not send state in RTC memory
@@ -111,6 +113,7 @@ void setup (void) {
 		ESP.rtcUserMemoryWrite (0, &emailState, 4);
 		if (isMail()) {
 			// switched on and mail, assume we want to reset
+			blink (5, 100);
 			Serial.println("reset wifi config");
 			wicoResetWifiConfig (0);
 		}
@@ -132,24 +135,29 @@ void loop(void) {
 void setupWifi (void) {
 	uint8_t r = 0;
 	IPAddress myIP;
-        char mySSID[MYSSID_LEN];
+	char mySSID[MYSSID_LEN];
 	uint8_t mac[6];
+
+	blink (2, 100);
 
 	// create ~uniq ssid
 	WiFi.macAddress(mac);
-        snprintf (mySSID, MYSSID_LEN, "%s%02X%02X", baseSSID, mac[4], mac[5]);
+	snprintf (mySSID, MYSSID_LEN, "%s%02X%02X", baseSSID, mac[4], mac[5]);
 
 	// setup wifi
 	do {
 		r = wicoWifiConfig (0, mySSID, &myIP);
 		Serial.println(myIP);
 		if (r == 0 ) {
+			digitalWrite (BUILTIN_LED, HIGH);
 			// AP has been created, start web server
 			Serial.write (mySSID);
-			wicoSetupWebServer ();
+			wicoSetupWebServer (myIP);
+			digitalWrite (BUILTIN_LED, LOW);
 		}
 	} while (!r);
 
+	blink (3, 100);
 	// setup webserver
 	WiFi.hostname (HOSTNAME);
 	server.on ("/", handleRoot);
@@ -157,21 +165,6 @@ void setupWifi (void) {
 	server.begin();
 	Serial.println("HTTP server started");
 
-	//TODO: portail captif
-	// Set up mDNS responder:
-	// - first argument is the domain name, in this example
-	//   the fully-qualified domain name is "esp8266.local"
-	// - second argument is the IP address to advertise
-	//   we send our IP address on the WiFi network
-	if (!MDNS.begin(HOSTNAME, myIP)) {
-		Serial.println("Error setting up MDNS responder!");
-		while(1) {
-			delay(1000);
-		}
-	}
-	Serial.println("mDNS responder started");
-	// Add service to MDNS-SD
-	MDNS.addService("http", "tcp", 80);
 }
 
 
