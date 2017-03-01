@@ -54,7 +54,7 @@ void setup() {
   // set button
   pinMode (BUTTON, INPUT);
 
-  blink (2, 250);
+  blink (2, 100);
   delay (500);
 
   // Connect D0 to RST to wake up
@@ -65,10 +65,7 @@ void setup() {
 	  blink (5, 250);
   }
 
-  Serial.printf("Sleep for %d seconds\n\n", sleepSeconds);
 
-  // convert to microseconds
-  ESP.deepSleep(sleepSeconds * 1000000);
 }
 
 void loop() {
