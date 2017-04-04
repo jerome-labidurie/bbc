@@ -53,6 +53,7 @@ extern struct rst_info resetInfo;
 }
 
 #define BUTTON D1
+#define BUTTON_PWR D8
 
 #define SLEEP_SEC 10
 
@@ -71,8 +72,10 @@ void setup (void) {
 
 	EEPROM.begin(512);
 	pinMode (BUTTON,      INPUT);
+	pinMode (BUTTON_PWR,  OUTPUT);
 	pinMode (BUILTIN_LED, OUTPUT);
 	digitalWrite (BUILTIN_LED, HIGH);
+	digitalWrite (BUTTON_PWR, LOW);
 
 	Serial.begin (115200);
 	Serial.printf ("\n\n%s\n", VERSION);
@@ -119,7 +122,8 @@ void setup (void) {
 		}
 		setupWifi();
 		// set DeepSleep time at now + 1min
-		sleepTime = millis() + 60 * 1000;
+// 		sleepTime = millis() + 60 * 1000;
+		sleepTime = millis() + 500; // TODO: change !
 	}
 } // setup()
 
@@ -204,7 +208,10 @@ void handleNotFound(void) {
  */
 boolean isMail () {
 	boolean ret;
-	ret = (digitalRead(BUTTON) == 0 );
+	digitalWrite (BUTTON_PWR, HIGH); // switch on Q1
+	delay(500);
+	ret = (digitalRead(BUTTON) == HIGH );
+	digitalWrite (BUTTON_PWR, LOW); // siwtch off Q1
 	if (ret) {
 		Serial.println ("MAIL!");
 	}
