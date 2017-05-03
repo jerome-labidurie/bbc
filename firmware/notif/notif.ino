@@ -121,9 +121,9 @@ void setup (void) {
 			wicoResetWifiConfig (0);
 		}
 		setupWifi();
-		// set DeepSleep time at now + 1min
-// 		sleepTime = millis() + 60 * 1000;
-		sleepTime = millis() + 500; // TODO: change !
+		// set DeepSleep time at now + 10min
+		sleepTime = millis() + 60 * 10000;
+// 		sleepTime = millis() + 500; // TODO: change !
 	}
 } // setup()
 
