@@ -10,8 +10,11 @@ contact: breizhboxcompany@gmail.com
 1 Télécharger l'environnement de developpement Arduino (version > 1.6) : https://www.arduino.cc/en/Main/Software
 
 2 Installer les bibliothèques nécessaires pour la carte D1 mini :
+ * Menu Fichier / Préférences
+ * Dans "URL de gestionaire de cartes supplémentaires" ajouter : http://arduino.esp8266.com/stable/package_esp8266com_index.json
  * Menu Outil / type de carte /gestionaire de cartes
  * Filtrer avec : esp8266
+ * Choisir "esp8266 by ESP8266 Community"
  * Cliquer sur : Installer
 
 3 Choisir le type de carte à programmer :
