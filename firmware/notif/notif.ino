@@ -122,8 +122,9 @@ void setup (void) {
 		}
 		setupWifi();
 		// set DeepSleep time at now + 10min
-		sleepTime = millis() + 60 * 10000;
-// 		sleepTime = millis() + 500; // TODO: change !
+// 		sleepTime = millis() + 60 * 10000;
+		// set DeepSleep time at now + 1min
+		sleepTime = millis() + 60 * 1000; // TODO: change !
 	}
 } // setup()
 
